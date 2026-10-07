@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acquisition — Challenge MRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#f6f8fc; --surface:#ffffff; --ink:#0f1a3d; --muted:#5d6885; --line:#dfe5f1;
+  --blue:#3b82f6; --blue-dark:#1e40af; --blue-light:#eff6ff;
+  --c-meta:#2563eb; --c-organique:#0d9488; --c-email:#d97706; --c-youtube:#dc2626; --c-affiliation:#7c3aed; --c-setting:#db2777; --c-partenaires:#65a30d; --c-other:#94a3b8;
+  --warn-bg:#fff7e6; --warn-ink:#7a4b00;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
+  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752;
+  --warn-bg:#3a2a07; --warn-ink:#ffd58a; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.brand{color:var(--blue);font-weight:600;font-size:14px;margin:0 0 4px}
+.brand a{color:inherit;text-decoration:none}
+.brand a:hover{text-decoration:underline}
+.brand a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button.ghost{background:transparent;color:var(--blue-dark);box-shadow:inset 0 0 0 1px var(--line)}
+:root[data-theme="dark"] button.ghost{color:var(--blue-dark)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.ghost{color:var(--blue-dark)}}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.01em}
+.period{color:var(--muted);font-size:14px;margin-top:4px}
+.refresh{display:flex;align-items:center;gap:14px}
+.stamp{color:var(--muted);font-size:13px;text-align:right}
+button{font:inherit;font-weight:600;font-size:14px;color:#fff;background:var(--blue-dark);border:0;border-radius:8px;padding:10px 16px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+:root[data-theme="dark"] button{color:#0c1430}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button{color:#0c1430}}
+button:disabled{opacity:.6;cursor:progress}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:none;animation:r .8s linear infinite}
+button:disabled .spin{display:inline-block}
+@keyframes r{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.notice{margin-top:18px;padding:12px 16px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink);font-size:14px}
+.notice:empty{display:none}
+section{margin-top:40px}
+h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
+.sub{color:var(--muted);font-weight:500;font-size:14px;margin-left:8px}
+
+/* Inscrits */
+.total{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.total .n{font-size:68px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.total .l{color:var(--muted);font-size:16px}
+.mix{display:flex;height:18px;border-radius:5px;overflow:hidden;margin:22px 0 26px;background:var(--line)}
+.mix span{display:block;height:100%}
+.mix span+span{box-shadow:inset 2px 0 0 var(--paper)}
+.channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border-top:1px solid var(--line)}
+.ch{padding:16px 18px 6px 0}
+.ch+.ch{padding-left:18px;border-left:1px solid var(--line)}
+.ch-head{display:flex;align-items:center;gap:8px;font-weight:600}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.ch-n{font-size:28px;font-weight:700;margin:6px 0 2px;letter-spacing:-.01em}
+.ch-p{color:var(--muted);font-size:13px}
+.src{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
+.src li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px dashed var(--line)}
+.src li.rest{color:var(--muted)}
+@media (max-width:640px){.ch+.ch{padding-left:0;border-left:0;border-top:1px solid var(--line)}.total .n{font-size:52px}}
+
+/* Meta */
+.kpis{display:grid;grid-template-columns:1fr 1fr 1.2fr;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{padding:18px 22px}
+.kpi+.kpi{border-left:1px solid var(--line)}
+.kpi .k{color:var(--muted);font-size:14px}
+.kpi .v{font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-.01em}
+.kpi .d{color:var(--muted);font-size:13px;margin-top:2px}
+.kpi.real{background:var(--blue-dark);color:#fff}
+.kpi.real .k,.kpi.real .d{color:#c7d6ff}
+:root[data-theme="dark"] .kpi.real{background:#1e3a8a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi.real{background:#1e3a8a}}
+@media (max-width:760px){.kpis{grid-template-columns:1fr}.kpi+.kpi{border-left:0;border-top:1px solid var(--line)}}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-top:16px}
+.chart-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.chart h3{margin:0;font-size:15px;font-weight:600}
+.legend{display:flex;gap:16px;color:var(--muted);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block}
+.sw.bar{width:12px;height:12px;border-radius:3px;background:var(--blue)}
+.sw.line{width:16px;height:3px;border-radius:2px;background:var(--ink)}
+.chart .box{position:relative;height:300px}
+
+/* Emailing */
+.table{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:820px}
+th,td{padding:11px 14px;text-align:right;white-space:nowrap}
+th{font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);font-size:13px}
+td{border-bottom:1px solid var(--line)}
+th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}
+td.subj{white-space:normal;min-width:260px;max-width:380px}
+td.subj small{display:block;color:var(--muted);font-size:12px}
+tfoot td{font-weight:700;border-bottom:0;background:var(--blue-light)}
+.empty{color:var(--muted);padding:18px}
+.ab-verdict{margin:0 0 14px;font-size:15px}
+.ab-verdict strong{font-weight:700}
+.ab-verdict .muted{color:var(--muted);font-size:13px;display:block;margin-top:2px}
+#ab table{min-width:560px}
+tr.lead td:first-child{font-weight:700;color:var(--blue-dark)}
+.err{color:#b91c1c}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="brand"><a href="/" id="back">Tous les challenges</a></p>
+      <h1 id="title">Challenge</h1>
+    </div>
+    <div class="refresh">
+      <div class="stamp" id="stamp">Chargement…</div>
+      <button id="btn" type="button"><span class="spin"></span>Mettre à jour</button>
+    </div>
+  </header>
+  <div class="notice" id="notice"></div>
+
+  <section aria-labelledby="h-ins">
+    <h2 id="h-ins">Inscrits</h2>
+    <div class="total"><span class="n" id="total">–</span></div>
+    <div class="mix" id="mix"></div>
+    <div class="channels" id="channels"></div>
+  </section>
+
+  <section aria-labelledby="h-meta">
+    <h2 id="h-meta">Publicités Meta<span class="sub" id="meta-sub"></span></h2>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Dépensé</div><div class="v" id="k-spend">–</div><div class="d" id="k-spend-d"></div></div>
+      <div class="kpi"><div class="k">CPL Meta</div><div class="v" id="k-cplm">–</div><div class="d" id="k-cplm-d"></div></div>
+      <div class="kpi real"><div class="k">CPL réel</div><div class="v" id="k-cplr">–</div><div class="d" id="k-cplr-d"></div></div>
+    </div>
+    <div class="chart">
+      <div class="chart-head"><h3 id="chart-title">Dépense et CPL réel par jour</h3>
+        <div class="legend"><span><i class="sw bar"></i>Dépense</span><span><i class="sw line"></i><span id="line-label">CPL réel</span></span></div></div>
+      <div class="box"><canvas id="c-meta" aria-label="Dépense et CPL Meta par jour"></canvas></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ab" id="ab-section" hidden>
+    <h2 id="h-ab">A/B test page d'inscription<span class="sub">source PostHog</span></h2>
+    <div class="ab-verdict" id="ab-verdict"></div>
+    <div class="table" id="ab"></div>
+  </section>
+
+  <section aria-labelledby="h-mail">
+    <h2 id="h-mail">Emailing</h2>
+    <div class="table" id="emails"></div>
+  </section>
+</div>
+
+<script>
+const COLORS={META:'--c-meta',ORGANIQUE:'--c-organique',EMAIL:'--c-email',YOUTUBE:'--c-youtube',AFFILIATION:'--c-affiliation',SETTING:'--c-setting',PARTENAIRES:'--c-partenaires'};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf=new Intl.NumberFormat('fr-FR');
+const eur=(n,d=2)=>n==null?'–':n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=n=>n==null?'–':(n*100).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1})+' %';
+const int=n=>n==null?'–':nf.format(n);
+const dshort=s=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+const dlong=s=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let charts={};
+
+
+
+function render(d){
+  const c=d.challenge||{};
+  document.getElementById('title').textContent=c.name||'Challenge';
+  document.title=(c.name||'Challenge')+' — Acquisition';
+  const at=new Date(d.generatedAt), hm=at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), day=at.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+  const live=c.status==='live'||d.demo;
+  const btn=document.getElementById('btn'); btn.lastChild.textContent=live?'Mettre à jour':(d.frozen?'Figer à nouveau':'Figer les données');
+  btn.dataset.mode=live?'refresh':'freeze'; btn.classList.toggle('ghost',!live&&d.frozen);
+  document.getElementById('stamp').textContent=live?'Mis à jour à '+hm:(d.frozen?`Données figées le ${day} à ${hm}`:`Calculé à ${hm} · pas encore figé`);
+  const notes=[];
+  if(d.notStarted) notes.push(`L'acquisition démarre le ${dlong(c.startDate)} : le dashboard se remplira à partir de cette date.`);
+  (d.errors||[]).forEach(e=>notes.push('Erreur : '+e));
+  (d.warnings||[]).forEach(w=>notes.push(w));
+  document.getElementById('notice').innerHTML=notes.map(esc).join('<br>');
+  renderSignups(d.signups); renderMeta(d.meta); renderAb(d.abtest); renderEmails(d.emails);
+}
+
+function renderSignups(s){
+  if(!s){document.getElementById('total').textContent='–';return}
+  document.getElementById('total').textContent=int(s.total);
+  const sum=s.channels.reduce((a,c)=>a+c.total,0)||1;
+  document.getElementById('mix').innerHTML=s.channels.map(c=>`<span title="${esc(c.label)} : ${int(c.total)}" style="width:${c.total/sum*100}%;background:var(${COLORS[c.key]||'--c-other'})"></span>`).join('');
+  document.getElementById('channels').innerHTML=s.channels.map(c=>`
+    <div class="ch">
+      <div class="ch-head"><span class="dot" style="background:var(${COLORS[c.key]||'--c-other'})"></span>${esc(c.label)}</div>
+      <div class="ch-n">${int(c.total)}</div>
+      <div class="ch-p">${pct(c.total/sum)} des inscrits</div>
+      ${c.sources.length?`<ul class="src">${c.sources.map(x=>`<li class="${x.rest?'rest':''}"><span>${esc(x.name)}</span><span>${int(x.count)}</span></li>`).join('')}</ul>`:''}
+    </div>`).join('');
+}
+
+function renderMeta(m){
+  const set=(id,v)=>document.getElementById(id).textContent=v;
+  if(!m){['k-spend','k-cplm','k-cplr'].forEach(i=>set(i,'–'));return}
+  set('k-spend',eur(m.spend,0)); set('k-spend-d',m.daily.length?`${m.daily.length} jours de diffusion`:'');
+  set('k-cplm',eur(m.cplMeta)); set('k-cplm-d',`${int(m.leads)} leads déclarés par Meta`);
+  set('k-cplr',eur(m.cplReel));
+  const gap=m.cplReel&&m.cplMeta?(m.cplReel/m.cplMeta-1):null;
+  set('k-cplr-d',`${int(m.signupsAC)} inscrits Meta dans AWeber`+(gap!=null?` · ${gap>=0?'+':''}${pct(gap)} vs CPL Meta`:''));
+  const act=(m.accounts||[]).filter(a=>!a.inactive&&!a.failed).length;
+  set('meta-sub',m.accounts?.length?`${act} compte${act>1?'s':''} actif${act>1?'s':''} sur ${m.accounts.length}`:'');
+  drawCharts(m.daily);
+}
+
+function drawCharts(daily){
+  if(!window.Chart) return;
+  const labels=daily.map(x=>dshort(x.date)), grid=css('--line'), tick=css('--muted'), blue=css('--blue'), ink=css('--ink');
+  const font={family:'Instrument Sans'};
+  Object.values(charts).forEach(c=>c.destroy()); charts={};
+  const real=daily.some(x=>x.cplReel!=null), lineLabel=real?'CPL réel':'CPL Meta';
+  document.getElementById('line-label').textContent=lineLabel;
+  document.getElementById('chart-title').textContent=`Dépense et ${lineLabel} par jour`;
+  charts.meta=new Chart(document.getElementById('c-meta'),{
+    data:{labels,datasets:[
+      {type:'bar',label:'Dépense',data:daily.map(x=>x.spend),backgroundColor:blue,borderRadius:3,maxBarThickness:38,yAxisID:'y',order:2},
+      {type:'line',label:lineLabel,data:daily.map(x=>real?x.cplReel:x.cpl),borderColor:ink,backgroundColor:ink,pointRadius:3,borderWidth:2,tension:.25,spanGaps:true,yAxisID:'y1',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label} : ${eur(c.parsed.y,c.dataset.yAxisID==='y'?0:2)}`,
+        afterBody:items=>{const x=daily[items[0].dataIndex];return real&&x.signupsAC!=null?`Inscrits Meta (AWeber) : ${int(x.signupsAC)}`:''}}}},
+      scales:{x:{grid:{display:false},ticks:{color:tick,font}},
+        y:{position:'left',beginAtZero:true,grid:{color:grid},ticks:{color:tick,font,callback:v=>eur(v,0)},title:{display:true,text:'Dépense',color:tick,font}},
+        y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{color:tick,font,callback:v=>eur(v)},title:{display:true,text:'CPL',color:tick,font}}}}});
+}
+
+function renderEmails(list){
+  const el=document.getElementById('emails');
+  if(!list){el.innerHTML='<div class="empty">Statistiques emailing indisponibles.</div>';return}
+  if(!list.length){el.innerHTML='<div class="empty">Aucun email envoyé pour ce challenge pour l’instant.</div>';return}
+  const t=list.reduce((a,e)=>({sent:a.sent+e.sent,del:a.del+e.delivered,sig:a.sig+(e.signups||0),op:a.op+(e.uniqueOpens??(e.openRate||0)*e.delivered),cl:a.cl+(e.uniqueClicks??(e.clickRate||0)*e.delivered)}),{sent:0,del:0,sig:0,op:0,cl:0});
+  el.innerHTML=`<table><thead><tr><th>Email</th><th>Objet</th><th>Envoyés</th><th>Délivrés</th><th>Délivrabilité</th><th>Ouverture</th><th>Clics</th><th>Inscriptions</th></tr></thead><tbody>
+  ${list.map(e=>`<tr><td>${e.number!=null?'n°'+e.number:esc(e.name)}</td><td class="subj">${esc(e.subject||'—')}<small>${esc(e.name)} · ${new Date(e.sentAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</small></td>
+    <td>${int(e.sent)}</td><td>${int(e.delivered)}</td><td>${pct(e.deliverability)}</td><td>${pct(e.openRate)}</td><td>${pct(e.clickRate)}</td><td${e.sameDay?' title="Même jour qu’un email précédent : inscrits comptés sur ce dernier"':''}>${e.signups==null?(e.sameDay?'↑':'—'):int(e.signups)}</td></tr>`).join('')}
+  </tbody><tfoot><tr><td>Total</td><td>${list.length} emails · taux moyens pondérés</td><td>${int(t.sent)}</td><td>${int(t.del)}</td><td>${pct(t.sent?t.del/t.sent:null)}</td><td>${pct(t.del?t.op/t.del:null)}</td><td>${pct(t.del?t.cl/t.del:null)}</td><td>${int(t.sig)}</td></tr></tfoot></table>`;
+}
+
+function renderAb(ab){
+  const sec=document.getElementById('ab-section');
+  if(ab===undefined){sec.hidden=true;return}
+  sec.hidden=false;
+  const el=document.getElementById('ab'), v=document.getElementById('ab-verdict');
+  if(!ab||!ab.variants.length){v.textContent='';el.innerHTML='<div class="empty">Pas encore de données PostHog sur la période.</div>';return}
+  const t=ab.test;
+  if(t&&t.leader){
+    const up=t.uplift==null?'':` (${t.uplift>=0?'+':''}${pct(t.uplift)} pour B vs A)`;
+    v.innerHTML=t.significant
+      ?`<strong>La variante ${t.leader} convertit mieux${esc(up)}</strong>, écart statistiquement fiable.<span class="muted">p = ${t.pValue.toFixed(3)} : moins de 5 % de chances que l'écart soit dû au hasard.</span>`
+      :`<strong>Pas encore de gagnant</strong> : ${t.leader} est devant${esc(up)} mais l'écart peut encore être dû au hasard.<span class="muted">p = ${t.pValue.toFixed(3)} : il faut descendre sous 0,05 pour conclure.</span>`;
+  } else v.textContent='';
+  el.innerHTML=`<table><thead><tr><th>Variante</th><th>Visites</th><th>Inscriptions</th><th>Taux de conversion</th></tr></thead><tbody>
+  ${ab.variants.map(x=>`<tr class="${t&&t.significant&&t.leader===x.variant?'lead':''}"><td>Variante ${esc(x.variant)}</td><td>${int(x.visits)}</td><td>${int(x.signups)}</td><td>${pct(x.rate)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+const CID=new URLSearchParams(location.search).get('c')||'';
+async function load(freeze){
+  const btn=document.getElementById('btn'); btn.disabled=true;
+  document.getElementById('stamp').textContent=freeze?'Calcul et enregistrement…':'Mise à jour…';
+  try{
+    const r=await fetch((freeze?'/api/freeze':'/api/report')+'?c='+encodeURIComponent(CID),{method:freeze?'POST':'GET',cache:'no-store'});
+    const type=r.headers.get('content-type')||'';
+    if(!type.includes('application/json')) throw new Error('no-api');
+    render(await r.json());
+  }catch(e){ document.getElementById('stamp').textContent='Données indisponibles'; document.getElementById('notice').textContent='Impossible de joindre l\'API du dashboard.'; }
+  finally{ btn.disabled=false; }
+}
+document.getElementById('btn').addEventListener('click',e=>{
+  const freeze=e.currentTarget.dataset.mode==='freeze';
+  if(freeze&&!confirm('Recalculer ce challenge et remplacer les données figées ?')) return;
+  load(freeze);
+});
+load(false);
+</script>
+</body>
+</html>

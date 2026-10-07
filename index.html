@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Challenges MRE — Acquisition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f8fc; --surface:#ffffff; --ink:#0f1a3d; --muted:#5d6885; --line:#dfe5f1;
+  --blue:#3b82f6; --blue-dark:#1e40af; --blue-light:#eff6ff; --live:#16a34a; --live-bg:#e8f7ee; --todo-bg:#fff4e0; --todo:#a35c00;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752; --live:#4ade80; --live-bg:#12331f; --todo-bg:#3a2a07; --todo:#ffd58a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#0c1430; --surface:#131d40; --ink:#e8edfb; --muted:#9aa6c6; --line:#26325c;
+  --blue:#60a5fa; --blue-dark:#93c5fd; --blue-light:#1a2752; --live:#4ade80; --live-bg:#12331f; --todo-bg:#3a2a07; --todo:#ffd58a; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+header{padding-bottom:20px;border-bottom:1px solid var(--line)}
+.brand{color:var(--blue);font-weight:600;font-size:14px;margin:0 0 4px}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.01em}
+.notice{margin-top:18px;padding:12px 16px;border-radius:8px;background:var(--todo-bg);color:var(--todo);font-size:14px}
+.notice:empty{display:none}
+.list{margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(3,minmax(110px,1fr));gap:16px;align-items:center;padding:20px 22px;color:inherit;text-decoration:none}
+.row+.row{border-top:1px solid var(--line)}
+.row:hover{background:var(--blue-light)}
+.row:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.name{font-size:18px;font-weight:700}
+.meta{display:flex;gap:10px;align-items:center;margin-top:4px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--blue-light);color:var(--blue-dark)}
+.chip.live{background:var(--live-bg);color:var(--live)}
+.chip.todo{background:var(--todo-bg);color:var(--todo)}
+.chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.stat .k{color:var(--muted);font-size:13px}
+.stat .v{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.head{padding:12px 22px;color:var(--muted);font-size:13px;font-weight:600;border-bottom:1px solid var(--line)}
+.head .stat-h{text-align:left}
+@media (max-width:760px){.row{grid-template-columns:1fr 1fr 1fr}.row>div:first-child{grid-column:1/-1}.head{display:none}.stat .v{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="brand">Acquisition · Méthode MRE</p>
+    <h1>Challenges</h1>
+  </header>
+  <div class="notice" id="notice"></div>
+  <div class="list" id="list" aria-busy="true"><div class="row"><div class="meta">Chargement…</div></div></div>
+</div>
+<script>
+const nf=new Intl.NumberFormat('fr-FR');
+const eur=(n,d=2)=>n==null?'–':n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:d,maximumFractionDigits:d});
+const int=n=>n==null?'–':nf.format(n);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dd=s=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+
+const DEMO={demo:true,challenges:[
+  {id:'mre-5',name:'MRE 5',startDate:'2026-10-08',endDate:'2026-10-18',status:'live',summary:{total:null,spend:null,cplReel:null}}]};
+
+function row(c){
+  const s=c.summary||{};
+  const chip=c.status==='live'?'<span class="chip live">En cours · temps réel</span>'
+    :c.frozen?`<span class="chip">Figé le ${new Date(c.frozenAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>`
+    :'<span class="chip todo">À figer</span>';
+  return `<a class="row" href="/challenge.html?c=${encodeURIComponent(c.id)}" data-id="${esc(c.id)}">
+    <div><div class="name">${esc(c.name)}</div><div class="meta">Du ${dd(c.startDate)} au ${dd(c.endDate)} ${chip}</div></div>
+    <div class="stat"><div class="k">Inscrits</div><div class="v" data-f="total">${int(s.total)}</div></div>
+    <div class="stat"><div class="k">Dépense Meta</div><div class="v" data-f="spend">${eur(s.spend,0)}</div></div>
+    <div class="stat"><div class="k">CPL réel</div><div class="v" data-f="cplReel">${eur(s.cplReel)}</div></div>
+  </a>`;
+}
+
+async function fillLive(c){
+  try{
+    const r=await fetch('/api/report?c='+encodeURIComponent(c.id),{cache:'no-store'});
+    const d=await r.json(); const el=document.querySelector(`[data-id="${CSS.escape(c.id)}"]`);
+    el.querySelector('[data-f="total"]').textContent=int(d.signups?.total);
+    el.querySelector('[data-f="spend"]').textContent=eur(d.meta?.spend,0);
+    el.querySelector('[data-f="cplReel"]').textContent=eur(d.meta?.cplReel);
+  }catch(e){}
+}
+
+(async()=>{
+  let data;
+  try{
+    const r=await fetch('/api/challenges',{cache:'no-store'});
+    if(!(r.headers.get('content-type')||'').includes('application/json')) throw 0;
+    data=await r.json();
+  }catch(e){ data=DEMO; }
+  const list=document.getElementById('list');
+  list.innerHTML=data.challenges.map(row).join(''); list.removeAttribute('aria-busy');
+  if(!data.demo) data.challenges.filter(c=>c.status==='live'||!c.frozen).forEach(fillLive);
+  const todo=data.challenges.filter(c=>c.status!=='live'&&!c.frozen).length;
+  if(todo&&!data.demo) document.getElementById('notice').textContent=`${todo} challenge${todo>1?'s':''} terminé${todo>1?'s':''} pas encore figé${todo>1?'s':''} : ouvre-le et clique sur « Figer les données ».`;
+})();
+</script>
+</body>
+</html>

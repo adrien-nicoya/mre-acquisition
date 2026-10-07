@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "api/report.js": {
+      "maxDuration": 60
+    },
+    "api/freeze.js": {
+      "maxDuration": 60
+    },
+    "api/snapshot.js": {
+      "maxDuration": 60
+    },
+    "api/aweber-callback.js": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/snapshot",
+      "schedule": "0 22 * * *"
+    }
+  ]
+}
