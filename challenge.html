@@ -30,6 +30,7 @@
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
 header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--line)}
@@ -73,6 +74,8 @@ h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
 .dot{width:10px;height:10px;border-radius:3px;flex:none}
 .ch-n{font-size:28px;font-weight:700;margin:6px 0 2px;letter-spacing:-.01em}
 .ch-p{color:var(--muted);font-size:13px}
+.goal{height:6px;border-radius:3px;background:var(--line);margin:8px 0 4px;overflow:hidden}
+.goal span{display:block;height:100%;border-radius:3px}
 .src{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
 .src li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px dashed var(--line)}
 .src li.rest{color:var(--muted)}
@@ -99,6 +102,7 @@ h2{font-size:19px;font-weight:700;margin:0 0 16px;letter-spacing:-.005em}
 .sw.bar{width:12px;height:12px;border-radius:3px;background:var(--blue)}
 .sw.line{width:16px;height:3px;border-radius:2px;background:var(--ink)}
 .chart .box{position:relative;height:300px}
+.sw.dash{width:16px;height:0;border-top:2px dashed var(--muted)}
 
 /* Emailing */
 .table{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
@@ -138,6 +142,11 @@ tr.lead td:first-child{font-weight:700;color:var(--blue-dark)}
     <div class="total"><span class="n" id="total">–</span></div>
     <div class="mix" id="mix"></div>
     <div class="channels" id="channels"></div>
+    <div class="chart" id="signups-chart" hidden>
+      <div class="chart-head"><h3>Inscrits par jour</h3>
+        <div class="legend"><span><i class="sw bar"></i>Inscrits du jour</span><span><i class="sw line"></i>Cumul</span><span id="goal-legend" hidden><i class="sw dash"></i><span id="goal-label">Objectif</span></span></div></div>
+      <div class="box"><canvas id="c-signups" aria-label="Inscrits par jour et cumul"></canvas></div>
+    </div>
   </section>
 
   <section aria-labelledby="h-meta">
@@ -194,10 +203,10 @@ function render(d){
   (d.errors||[]).forEach(e=>notes.push('Erreur : '+e));
   (d.warnings||[]).forEach(w=>notes.push(w));
   document.getElementById('notice').innerHTML=notes.map(esc).join('<br>');
-  renderSignups(d.signups); renderMeta(d.meta); renderAb(d.abtest); renderEmails(d.emails);
+  renderSignups(d.signups,(d.challenge||{}).targets); drawSignups(d.signupsDaily,(d.challenge||{}).targets); renderMeta(d.meta); renderAb(d.abtest); renderEmails(d.emails);
 }
 
-function renderSignups(s){
+function renderSignups(s,targets){
   if(!s){document.getElementById('total').textContent='–';return}
   document.getElementById('total').textContent=int(s.total);
   const sum=s.channels.reduce((a,c)=>a+c.total,0)||1;
@@ -206,7 +215,9 @@ function renderSignups(s){
     <div class="ch">
       <div class="ch-head"><span class="dot" style="background:var(${COLORS[c.key]||'--c-other'})"></span>${esc(c.label)}</div>
       <div class="ch-n">${int(c.total)}</div>
-      <div class="ch-p">${pct(c.total/sum)} des inscrits</div>
+      ${targets?(targets[c.key]?`<div class="goal"><span style="width:${Math.min(c.total/targets[c.key],1)*100}%;background:var(${COLORS[c.key]||'--c-other'})"></span></div>
+      <div class="ch-p">${pct(c.total/targets[c.key])} de l'objectif (${int(targets[c.key])})</div>`:'<div class="ch-p">Sans objectif</div>')
+      :`<div class="ch-p">${pct(c.total/sum)} des inscrits</div>`}
       ${c.sources.length?`<ul class="src">${c.sources.map(x=>`<li class="${x.rest?'rest':''}"><span>${esc(x.name)}</span><span>${int(x.count)}</span></li>`).join('')}</ul>`:''}
     </div>`).join('');
 }
@@ -224,11 +235,33 @@ function renderMeta(m){
   drawCharts(m.daily);
 }
 
+function drawSignups(rows,targets){
+  const box=document.getElementById('signups-chart');
+  if(!window.Chart||!rows||!rows.length){box.hidden=true;return}
+  box.hidden=false;
+  const grid=css('--line'), tick=css('--muted'), blue=css('--blue'), ink=css('--ink'), font={family:'Instrument Sans'};
+  const goal=targets?Object.values(targets).reduce((a,b)=>a+b,0):null;
+  document.getElementById('goal-legend').hidden=!goal;
+  if(goal) document.getElementById('goal-label').textContent=`Objectif (${int(goal)})`;
+  charts.signups&&charts.signups.destroy();
+  charts.signups=new Chart(document.getElementById('c-signups'),{
+    data:{labels:rows.map(x=>dshort(x.date)+(x.today?' (en cours)':'')),datasets:[
+      {type:'bar',label:'Inscrits du jour',data:rows.map(x=>x.daily),backgroundColor:rows.map(x=>x.today?blue+'66':blue),borderRadius:3,maxBarThickness:38,yAxisID:'y',order:3},
+      {type:'line',label:'Cumul',data:rows.map(x=>x.total),borderColor:ink,backgroundColor:ink,pointRadius:3,borderWidth:2,tension:.25,yAxisID:'y1',order:1},
+      ...(goal?[{type:'line',label:'Objectif',data:rows.map(()=>goal),borderColor:tick,borderDash:[6,4],borderWidth:1.5,pointRadius:0,yAxisID:'y1',order:2}]:[])]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{filter:i=>i.dataset.label!=='Objectif',callbacks:{label:c=>`${c.dataset.label} : ${int(c.parsed.y)}`,
+        afterBody:i=>goal?`Objectif atteint : ${pct(rows[i[0].dataIndex].total/goal)}`:''}}},
+      scales:{x:{grid:{display:false},ticks:{color:tick,font}},
+        y:{position:'left',beginAtZero:true,grid:{color:grid},ticks:{color:tick,font,callback:v=>int(v)},title:{display:true,text:'Par jour',color:tick,font}},
+        y1:{position:'right',beginAtZero:true,suggestedMax:goal||undefined,grid:{drawOnChartArea:false},ticks:{color:tick,font,callback:v=>int(v)},title:{display:true,text:'Cumul',color:tick,font}}}}});
+}
+
 function drawCharts(daily){
   if(!window.Chart) return;
   const labels=daily.map(x=>dshort(x.date)), grid=css('--line'), tick=css('--muted'), blue=css('--blue'), ink=css('--ink');
   const font={family:'Instrument Sans'};
-  Object.values(charts).forEach(c=>c.destroy()); charts={};
+  charts.meta&&charts.meta.destroy();
   const real=daily.some(x=>x.cplReel!=null), lineLabel=real?'CPL réel':'CPL Meta';
   document.getElementById('line-label').textContent=lineLabel;
   document.getElementById('chart-title').textContent=`Dépense et ${lineLabel} par jour`;
