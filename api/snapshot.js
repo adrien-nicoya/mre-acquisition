@@ -15,7 +15,8 @@ export default async function handler(req, res) {
   for (const ch of live) {
     const s = await getSignups(ch);
     const channels = Object.fromEntries(s.channels.map(c => [c.key, c.total]));
-    await saveDaily(ch.id, day, { date: day, takenAt: now.toISOString(), total: s.total, meta: channels.META ?? 0, channels });
+    const sources = Object.fromEntries(s.channels.map(c => [c.key, Object.fromEntries(c.sources.map(x => [x.name, x.count]))]));
+    await saveDaily(ch.id, day, { date: day, takenAt: now.toISOString(), total: s.total, meta: channels.META ?? 0, channels, sources });
     out.push({ id: ch.id, day, total: s.total });
   }
   res.status(200).json({ saved: out });
