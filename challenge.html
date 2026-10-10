@@ -113,6 +113,7 @@ td{border-bottom:1px solid var(--line)}
 th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}
 td.subj{white-space:normal;min-width:260px;max-width:380px}
 td.subj small{display:block;color:var(--muted);font-size:12px}
+td.shared{vertical-align:middle;border-left:1px dashed var(--line)}
 tfoot td{font-weight:700;border-bottom:0;background:var(--blue-light)}
 .empty{color:var(--muted);padding:18px}
 .ab-verdict{margin:0 0 14px;font-size:15px}
@@ -283,9 +284,10 @@ function renderEmails(list){
   if(!list.length){el.innerHTML='<div class="empty">Aucun email envoyé pour ce challenge pour l’instant.</div>';return}
   const t=list.reduce((a,e)=>({sent:a.sent+e.sent,del:a.del+e.delivered,sig:a.sig+(e.signups||0),op:a.op+(e.uniqueOpens??(e.openRate||0)*e.delivered),cl:a.cl+(e.uniqueClicks??(e.clickRate||0)*e.delivered)}),{sent:0,del:0,sig:0,op:0,cl:0});
   el.innerHTML=`<table><thead><tr><th>Email</th><th>Objet</th><th>Envoyés</th><th>Délivrés</th><th>Délivrabilité</th><th>Ouverture</th><th>Clics</th><th>Inscriptions</th></tr></thead><tbody>
-  ${list.map(e=>`<tr><td>${e.number!=null?'n°'+e.number:esc(e.name)}</td><td class="subj">${esc(e.subject||'—')}<small>${esc(e.name)} · ${new Date(e.sentAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</small></td>
-    <td>${int(e.sent)}</td><td>${int(e.delivered)}</td><td>${pct(e.deliverability)}</td><td>${pct(e.openRate)}</td><td>${pct(e.clickRate)}</td><td${e.sameDay?' title="Même jour qu’un email précédent : inscrits comptés sur ce dernier"':''}>${e.signups==null?(e.sameDay?'↑':'—'):int(e.signups)}</td></tr>`).join('')}
-  </tbody><tfoot><tr><td>Total</td><td>${list.length} emails · taux moyens pondérés</td><td>${int(t.sent)}</td><td>${int(t.del)}</td><td>${pct(t.sent?t.del/t.sent:null)}</td><td>${pct(t.del?t.op/t.del:null)}</td><td>${pct(t.del?t.cl/t.del:null)}</td><td>${int(t.sig)}</td></tr></tfoot></table>`;
+  ${list.map(e=>{const sig=e.groupSize===0?'':`<td${e.groupSize>1?` rowspan="${e.groupSize}" class="shared" title="Inscriptions communes aux ${e.groupSize} envois"`:''}${e.sameDay?' title="Même jour qu’un email précédent : inscrits comptés sur ce dernier"':''}>${e.signups==null?(e.sameDay?'↑':'—'):int(e.signups)}</td>`;
+    return `<tr${e.groupSize===0?' class="resend"':''}><td>${e.number!=null?'n°'+e.number:esc(e.name)}</td><td class="subj">${esc(e.subject||'—')}<small>${esc(e.name)} · ${new Date(e.sentAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</small></td>
+    <td>${int(e.sent)}</td><td>${int(e.delivered)}</td><td>${pct(e.deliverability)}</td><td>${pct(e.openRate)}</td><td>${pct(e.clickRate)}</td>${sig}</tr>`}).join('')}
+  </tbody><tfoot><tr><td>Total</td><td>${new Set(list.map(e=>e.number)).size} emails${list.length>new Set(list.map(e=>e.number)).size?` (${list.length} envois)`:''} · taux moyens pondérés</td><td>${int(t.sent)}</td><td>${int(t.del)}</td><td>${pct(t.sent?t.del/t.sent:null)}</td><td>${pct(t.del?t.op/t.del:null)}</td><td>${pct(t.del?t.cl/t.del:null)}</td><td>${int(t.sig)}</td></tr></tfoot></table>`;
 }
 
 function renderAb(ab){
